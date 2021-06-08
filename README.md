@@ -12,7 +12,7 @@ Keep track of your CSGO Inventory value (semi-automatically).
 
 1. clone this repository to your directory of choice
 	- `git clone https://github.com/ArckyPN/CSGO-Inventory-Checker.git`
-2. create a directoy named `storage`
+2. create a directory named `storage`
 	- `mkdir storage`
 3. inside `storage` create as many .csv file as you like containing your items
 	- personally, I have one file for every Storage Unit (SU)
