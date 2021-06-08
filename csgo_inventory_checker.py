@@ -3,33 +3,12 @@ import numpy as np
 import re
 import shutil
 import glob
-from os import listdir
 import os
 from time import sleep
 from time import gmtime
 
-# item = sm.get_csgo_item('Glove Case', currency='EUR')
-# print(type(item))
-# print(item)
-# price = re.findall(r"[-+]?\d*\.\d+|\d+", item["lowest_price"])
-# if len(price) == 2:
-# 	price = float(int(price[0]) + int(price[1]) / 100)
-# else:
-# 	price = np.round(float(price[0]), 2)
-# print(price)
-# negative = -5.23
-# print(str(negative))
-# positive = 4.67
-# positive = "+" + str(positive)
-# print(positive)
-# nul = 0
-# print(str(nul))
-# print("{:>+9.2}".format(5.4))
-# print("{:>+9.2}".format(-5.4))
-# print("{:>+9.2}".format(0.0))
-# if type(item) == <class 'dict'>:
-# 	print("hurray")
-# exit()
+def line():
+	for _ in range(50): f.write("-")
 
 def today():
 	date = gmtime()
@@ -44,7 +23,7 @@ def convertPrice(str):
 	return price
 
 def readStorage(inv):
-	storage = listdir("storage")
+	storage = os.listdir("storage")
 	for s in storage:
 		s = "storage/" + s
 		container = np.genfromtxt(s, delimiter=';', skip_header=1, dtype=str, max_rows=1)
@@ -137,8 +116,9 @@ class Inventory:
 		return "{:34}{:>9.2f}€\n".format("Total Sale value (approx.):", np.round(value, 2))
 
 	def saveRawInventory(self):
-		if glob.glob("inventory/*") != []:
-			previousInv = max(glob.glob("inventory/*"), key=os.path.getctime)
+		path = glob.glob("inventory/*")
+		if path != []:
+			previousInv = max(path, key=os.path.getctime)
 			print("previous", previousInv)
 			preData = np.genfromtxt(previousInv, delimiter=';', skip_header=1, max_rows=len(self.stock), dtype=None, encoding=None)
 			p = self.getTotalProfit()
@@ -151,11 +131,14 @@ class Inventory:
 		f = open("inventory.txt", "w")
 		f.write("{:20};{:>5};{:>7};{:>8} | {:>8};{:>9}\n".format("Name","Num","Price","Total","Profit","Total"))
 		totalProfit = 0.0
+		totalItems = 0
 		for s, d in zip(self.stock, preData):
 			profit = self.profit(s, d)
 			f.write("{:20};{:5};{:6.2f}€;{:7.2f}€ | {:>+7}€;{:>+8}€\n".format(s["name"], s["num"], s["price"], np.round(s["num"] * s["price"], 2), profit, np.round(profit * s["num"], 2)))
 			totalProfit += np.round(s["num"] * profit, 2)
-		if totalProfit > 0: prefix = "+"
+			totalItems += s["num"]
+		line()
+		f.write("\n{:34}{:>9}".format("Total Items:", totalItems))
 		f.write(self.getTotalValue())
 		f.write(self.getSaleValue())
 		f.write("\n{:34}{:>+9.2f}€\n".format("Total Profit since the last time:",totalProfit))
@@ -174,18 +157,20 @@ class Inventory:
 		print("old: ", oldInv)
 		preData = np.genfromtxt(oldInv, delimiter=';', skip_header=1, max_rows=len(self.stock), dtype=None, encoding=None)
 		totalProfit = 0.0
-		prefix = ""
 		for s, d in zip(self.stock, preData):
 			profit = self.profit(s, d)
 			totalProfit += np.round(s["num"] * profit, 2)
 		return "{:34}{:>+9.2f}€\n".format("Total Profit since beginning:", totalProfit)
 
 def main():
+	os.makedirs("inventory", exist_ok=True)
 	inv = Inventory()
 	readStorage(inv)
 	print(inv.getTotalValue())
 	print(inv.getSaleValue())
 	inv.saveRawInventory()
+	with open("inventory.txt", "r") as f:
+		print(f.read())
 
 if __name__ == '__main__':
 	main()
