@@ -5,6 +5,7 @@ import shutil
 import glob
 import os
 from time import sleep
+from item import Item
 
 class Inventory:
 	def __init__(self):
