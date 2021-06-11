@@ -6,6 +6,14 @@ import glob
 import os
 from time import sleep
 from item import Item
+from time import gmtime
+
+def line(f):
+	for _ in range(100): f.write("-")
+
+def today():
+	date = gmtime()
+	return "{hour}_{minute}_{second}_{day}_{month}_{year}".format(day=date.tm_mday-1, month=date.tm_mon, year=date.tm_year, hour=date.tm_hour, minute=date.tm_min, second=date.tm_sec)
 
 class Inventory:
 	def __init__(self):
@@ -43,7 +51,7 @@ class Inventory:
 		if path != []:
 			previousInv = max(path, key=os.path.getctime)
 			print("previous", previousInv)
-			preData = np.genfromtxt(previousInv, delimiter=';', skip_header=1, max_rows=len(self.stock), dtype=None, encoding=None)
+			preData = np.genfromtxt(previousInv, delimiter=';', skip_header=1, skip_footer=6, dtype=None, encoding=None, autostrip=True, usecols = (0,1,2))
 			p = self.getTotalProfit()
 		else:
 			preData = self.stock
@@ -52,14 +60,23 @@ class Inventory:
 			shutil.move("inventory.txt", "inventory/inventory_{}.txt".format(today()))
 			print("archived inventory.txt to inventory directory")
 		f = open("inventory.txt", "w")
-		f.write("{:{}};{:>5};{:>7};{:>8} | {:>8};{:>9}\n".format("Name",nameLength, "Num","Price","Total","Profit","Total"))
+		f.write("{name:{nameLen}};{num:>5};{price:>7};{total:>8} | {profit:>8};{totalP:>9}\n".format(name="Name",nameLen=nameLength, num="Num",price="Price",total="Total",profit="Profit",totalP="Total"))
 		totalProfit = 0.0
 		totalItems = 0
-		for s, d in zip(self.stock, preData):
-			profit = self.profit(s, d)
-			f.write("{:{}};{:5};{:6.2f}€;{:7.2f}€ | {:>+7}€;{:>+8}€\n".format(s["name"],nameLength,  s["num"], s["price"], np.round(s["num"] * s["price"], 2), profit, np.round(profit * s["num"], 2)))
-			totalProfit += np.round(s["num"] * profit, 2)
-			totalItems += s["num"]
+		for s in self.stock:
+			new = True
+			for d in preData:
+				if s["name"] == d[0]:
+						profit = self.profit(s, d)
+						f.write("{:{}};{:5};{:6.2f}€;{:7.2f}€ | {:>+7}€;{:>+8}€\n".format(s["name"],nameLength,  s["num"], s["price"], np.round(s["num"] * s["price"], 2), profit, np.round(profit * s["num"], 2)))
+						totalProfit += np.round(s["num"] * profit, 2)
+						totalItems += s["num"]
+						new = False
+						break
+			if new:
+				f.write("{:{}};{:5};{:6.2f}€;{:7.2f}€ | new Item!\n".format(s["name"],nameLength,  s["num"], s["price"], np.round(s["num"] * s["price"], 2)))
+				totalItems += s["num"]
+
 		line(f)
 		f.write("\n{:34}{:>9}\n".format("Total Items:", totalItems))
 		f.write(self.getTotalValue())
@@ -78,12 +95,18 @@ class Inventory:
 	def getTotalProfit(self):
 		oldInv = min(glob.glob("inventory/*"), key=os.path.getctime)
 		print("old: ", oldInv)
-		print("len:", len(self.stock))
 		preData = np.genfromtxt(oldInv, delimiter=';', skip_header=1, max_rows=len(self.stock), dtype=None, encoding=None)
 		totalProfit = 0.0
-		for s, d in zip(self.stock, preData):
-			profit = self.profit(s, d)
-			totalProfit += np.round(s["num"] * profit, 2)
+		for s in self.stock:
+			new = True
+			for d in preData:
+				if s["name"] == d[0]:
+					profit = self.profit(s, d)
+					totalProfit += np.round(s["num"] * profit, 2)
+					new = False
+					break
+			if new:
+				totalProfit += np.round(s["num"] * s["price"])
 		return "{:34}{:>+9.2f}€\n".format("Total Profit since beginning:", totalProfit)
 
 	def convertPrice(sel, str):
@@ -124,4 +147,3 @@ class Inventory:
 					self.add(Item(name, price, num))
 				else:
 					print("Error:", name)
-			# print("\n")

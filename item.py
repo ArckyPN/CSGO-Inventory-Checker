@@ -3,7 +3,7 @@ class Item:
 		self.item = {
 			"name" 	: name,
 			"price" : price,
-			"num" 	: num
+			"num" 	: num,
 		}
 
 	def __str__(self):
