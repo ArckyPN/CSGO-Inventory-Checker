@@ -95,18 +95,14 @@ class Inventory:
 	def getTotalProfit(self):
 		oldInv = min(glob.glob("inventory/*"), key=os.path.getctime)
 		print("old: ", oldInv)
-		preData = np.genfromtxt(oldInv, delimiter=';', skip_header=1, max_rows=len(self.stock), dtype=None, encoding=None)
+		preData = np.genfromtxt(oldInv, delimiter=';', skip_header=1, dtype=None, encoding=None, skip_footer=6)
 		totalProfit = 0.0
 		for s in self.stock:
-			new = True
 			for d in preData:
 				if s["name"] == d[0]:
 					profit = self.profit(s, d)
 					totalProfit += np.round(s["num"] * profit, 2)
-					new = False
 					break
-			if new:
-				totalProfit += np.round(s["num"] * s["price"])
 		return "{:34}{:>+9.2f}€\n".format("Total Profit since beginning:", totalProfit)
 
 	def convertPrice(sel, str):
